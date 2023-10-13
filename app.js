@@ -53,11 +53,8 @@ app
       }
       if (!userFound) {
         res.render('status', { status: 'User doent exist' });
-      } else {
-        res.render('status', { status: 'Login failed!' });
       }
     } catch (error) {
-      console.log('!!error --->', error);
       res.render('status', { status: 'Some error while looking for user' });
     }
   });
@@ -82,7 +79,7 @@ app
       console.log('Success');
       res.render('secrets.ejs');
     } catch (error) {
-      console.log('!!error while saving registration detail ---', error);
+      console.log('!!error while saving registration detail ---');
     }
   });
 
