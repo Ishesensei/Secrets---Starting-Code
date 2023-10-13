@@ -1,5 +1,7 @@
 //jshint esversion:6
+
 import mongoose from 'mongoose';
+import encrypt from 'mongoose-encryption';
 import express from 'express';
 const app = express();
 import dotenv from 'dotenv';
@@ -26,8 +28,8 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
 });
-
-// Create the User model
+var secret = process.env.SECRET;
+userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
 const User = user1DB.model('User', userSchema);
 
 //
@@ -39,8 +41,25 @@ app
   .get((req, res) => {
     res.render('login');
   })
-  .post((req, res) => {
-    res.render('login');
+  .post(async (req, res) => {
+    const { email, password } = req.body;
+    try {
+      const userFound = await User.findOne({ email: email });
+      if (userFound && userFound.password === password) {
+        res.render('secrets');
+      }
+      if (userFound && userFound.password !== password) {
+        res.render('status', { status: 'Login failed Password error.' });
+      }
+      if (!userFound) {
+        res.render('status', { status: 'User doent exist' });
+      } else {
+        res.render('status', { status: 'Login failed!' });
+      }
+    } catch (error) {
+      console.log('!!error --->', error);
+      res.render('status', { status: 'Some error while looking for user' });
+    }
   });
 app
   .route('/register')
@@ -55,9 +74,16 @@ app
       email,
       password,
     });
+    console.log('!!newUser --->', newUser);
 
     // Save the user to the database
-    newUser.save();
+    try {
+      await newUser.save();
+      console.log('Success');
+      res.render('secrets.ejs');
+    } catch (error) {
+      console.log('!!error while saving registration detail ---', error);
+    }
   });
 
 // Route to handle user registration
