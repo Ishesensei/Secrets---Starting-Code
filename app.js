@@ -1,58 +1,67 @@
 //jshint esversion:6
-import mongoose from "mongoose";
-import express from "express";
+import mongoose from 'mongoose';
+import express from 'express';
 const app = express();
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
 dotenv.config();
-import ejs from "ejs";
+import ejs from 'ejs';
 const port = process.env.PORT || 3000;
 app.use(express.urlencoded({ extended: true }));
-app.set("view engine", "ejs");
-app.use(express.static("public"));
-var Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
-var dbUri = "mongodb://localhost:27017/userDB";
-var userDB = mongoose.createConnection(dbUri, Urioptions);
+app.set('view engine', 'ejs');
+app.use(express.static('public'));
+// Database configuration
+const Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
+const dbUri = 'mongodb://localhost:27017/user1DB';
+const user1DB = mongoose.createConnection(dbUri, Urioptions);
+//
+
+// Define the user schema
 const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
-    },
-    password: {
-        type: String,
-        required: true,
-    },
+  email: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
 });
+
+// Create the User model
+const User = user1DB.model('User', userSchema);
 
 //
-app.get("/", (req, res) => {
-    res.render("home");
+app.get('/', (req, res) => {
+  res.render('home');
 });
-app.route("/login")
-    .get((req, res) => {
-        res.render("login");
-    })
-    .post((req, res) => {
-        res.render("login");
-    });
-app.route("/register")
-    .get((req, res) => {
-        res.render("register");
-    })
-    .post(async (req, res) => {
-        const { password, email } = req.body;
-        console.log("!!email and password --->", email, password);
-        var userDB = await mongoose.createConnection(dbUri, Urioptions);
-        var User = userDB.model("User", userSchema);
+app
+  .route('/login')
+  .get((req, res) => {
+    res.render('login');
+  })
+  .post((req, res) => {
+    res.render('login');
+  });
+app
+  .route('/register')
+  .get((req, res) => {
+    res.render('register');
+  })
+  .post(async (req, res) => {
+    const { email, password } = req.body;
 
-        const newUser = new User({
-            email: email,
-            password: password,
-        });
-        await newUser.save();
-        userDB.close();
+    // Create a new user document
+    const newUser = new User({
+      email,
+      password,
     });
 
-userDB.close();
+    // Save the user to the database
+    newUser.save();
+  });
+
+// Route to handle user registration
+app.post('/register', (req, res) => {});
 //
 app.listen(port, console.log(`Port started at ${port}`));
 
