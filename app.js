@@ -9,20 +9,20 @@ const port = process.env.PORT || 3000;
 app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 app.use(express.static("public"));
-const Urioptions = { useNewUrlParser: true };
-const dbUri = "mongodb://127.0.0.1:27017/userDB";
-const userDB = mongoose.createConnection(dbUri, Urioptions);
+var Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
+var dbUri = "mongodb://localhost:27017/userDB";
+var userDB = mongoose.createConnection(dbUri, Urioptions);
 const userSchema = new mongoose.Schema({
-    Name: {
+    email: {
         type: String,
         required: true,
     },
-    Password: {
+    password: {
         type: String,
         required: true,
     },
 });
-const User = userDB.model("User", userSchema);
+
 //
 app.get("/", (req, res) => {
     res.render("home");
@@ -38,12 +38,19 @@ app.route("/register")
     .get((req, res) => {
         res.render("register");
     })
-    .post((req, res) => {
-        res.render("register");
+    .post(async (req, res) => {
+        const { password, email } = req.body;
+        console.log("!!email and password --->", email, password);
+        var userDB = await mongoose.createConnection(dbUri, Urioptions);
+        var User = userDB.model("User", userSchema);
+
+        const newUser = new User({
+            email: email,
+            password: password,
+        });
+        await newUser.save();
+        userDB.close();
     });
-app.get("/submit", (req, res) => {
-    res.render("submit");
-});
 
 userDB.close();
 //
