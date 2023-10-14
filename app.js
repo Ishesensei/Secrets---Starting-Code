@@ -1,7 +1,7 @@
 //jshint esversion:6
 
 import mongoose from 'mongoose';
-import encrypt from 'mongoose-encryption';
+// import encrypt from 'mongoose-encryption';
 import express from 'express';
 const app = express();
 import dotenv from 'dotenv';
@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
   },
 });
 var secret = process.env.SECRET;
-userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
+// userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
 const User = user1DB.model('User', userSchema);
 
 //
@@ -46,6 +46,8 @@ app
     try {
       const userFound = await User.findOne({ email: email });
       if (userFound && userFound.password === password) {
+console.log('!!status --->', logged in successfully for,email={});
+        
         res.render('secrets');
       }
       if (userFound && userFound.password !== password) {
