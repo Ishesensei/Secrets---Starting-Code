@@ -10,6 +10,7 @@ const port = process.env.PORT || 3000;
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+import bcrypt from "bcrypt";
 // Database configuration
 const Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
 const dbUri = 'mongodb://localhost:27017/user1DB';
