@@ -41,28 +41,27 @@ app
     res.render('login');
   })
   .post(async (req, res) => {
-    const { email, password } = req.body;
-
+    let { email, password } = req.body;
     try {
       const userFound = await User.findOne({ email: email });
       if (!userFound) {
-        res.render('status', { status: 'User doent exist' });
+        return res.render('status', { status: "User doesn't exist" }); // Corrected the status message
       }
-      if (userFound) {
-        const testauth = (password = User.password ? true : false);
 
-        if (testauth === true) {
-          console.log(`auth matched!`);
-          res.render('secrets');
-        }
-        if (testauth === false) {
-          res.render('status', { status: 'Login failed Password error.' });
-        }
+      // Check if the password provided matches the user's password
+      const passwordMatch = userFound.password === password;
+
+      if (passwordMatch) {
+        console.log(`Authentication matched!`);
+        res.render('secrets');
+      } else {
+        res.render('status', { status: 'Login failed. Password error.' });
       }
     } catch (error) {
-      res.render('status', { status: 'Some error while looking for user' });
+      res.render('status', { status: 'Some error while looking for the user' });
     }
   });
+
 app
   .route('/register')
   .get((req, res) => {
