@@ -46,7 +46,7 @@ app
     try {
       const userFound = await User.findOne({ email: email });
       if (userFound && userFound.password === password) {
-console.log('!!status --->', logged in successfully for,email={});
+console.log('!!status --->',` logged in successfully for,email`={});
         
         res.render('secrets');
       }
