@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000;
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
-import bcrypt from "bcrypt";
+import bcrypt from 'bcrypt';
 // Database configuration
 const Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
 const dbUri = 'mongodb://localhost:27017/user1DB';
@@ -28,8 +28,7 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
 });
-const secret = process.env.SECRET;
-userSchema.plugin(encrypt, { secret: secret, encryptedFields: ['password'] });
+
 const User = user1DB.model('User', userSchema);
 
 //
@@ -43,16 +42,25 @@ app
   })
   .post(async (req, res) => {
     const { email, password } = req.body;
+    let myPlaintextPassword = password;
     try {
       const userFound = await User.findOne({ email: email });
-      if (userFound && userFound.password === password) {
-        res.render('secrets');
-      }
-      if (userFound && userFound.password !== password) {
-        res.render('status', { status: 'Login failed Password error.' });
-      }
-      if (!userFound) {
+      if (!userFound) { 
         res.render('status', { status: 'User doent exist' });
+      }
+      if (userFound) {
+        const testauth = await bcrypt.compareSync(
+          myPlaintextPassword,
+          userFound.password
+        );
+
+        if (testauth === true) {
+          console.log(`auth matched!`);
+          res.render('secrets');
+        }
+        if (testauth === false) {
+          res.render('status', { status: 'Login failed Password error.' });
+        }
       }
     } catch (error) {
       res.render('status', { status: 'Some error while looking for user' });
@@ -64,8 +72,13 @@ app
     res.render('register');
   })
   .post(async (req, res) => {
-    const { email, password } = req.body;
+    let { email, password } = req.body;
 
+    const saltRounds = 10;
+    const myPlaintextPassword = password;
+    const hash = bcrypt.hashSync(myPlaintextPassword, saltRounds);
+    console.log(`hashhhhhhhhhhhhhhhhhhhhhhhh`,hash)
+    password = hash;
     // Create a new user document
     const newUser = new User({
       email,
@@ -79,7 +92,7 @@ app
       console.log('Success');
       res.render('secrets.ejs');
     } catch (error) {
-      console.log('!!error while saving registration detail ---');
+      console.log('!!error while saving registration detail ---',error);
     }
   });
 
