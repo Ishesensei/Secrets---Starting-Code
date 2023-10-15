@@ -8,9 +8,17 @@ import ejs from 'ejs';
 import session from 'express-session';
 import passport from 'passport';
 import passportLocalMongoose from 'passport-local-mongoose';
+import morgan from 'morgan';
 //
 const port = process.env.PORT || 3000;
 // customise middleware
+morgan.token('req-query', (req) => `:query> ${JSON.stringify(req.query)}`);
+morgan.token('req-params', (req) => `:params> ${JSON.stringify(req.params)}`);
+morgan.token('req-body', (req) => `:body> ${JSON.stringify(req.body)}`);
+morgan.token('req-headers-cookie', (req) => `:headers.cookie> ${JSON.stringify(req.headers.cookie)}`);
+morgan.token('line', () => '``````````````````````````````````````');
+app.use(morgan(':method :url :status :res[content-length] :response-time ms\n:req-query :req-params :req-body\n :req-headers-cookie\n :line'));
+
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
@@ -39,7 +47,6 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
   },
 });
 //
@@ -90,9 +97,10 @@ app
   })
   .post(async (req, res) => {
     let { email, password } = req.body;
-    User.register({ username: email }, password, function (err, user) {
+    const username = email;
+    User.register({ username: username }, password, function (err, user) {
       if (err) {
-        console.log('!!err --->', err);
+        console.log('!!err during register .post--->', err);
         res.redirect('/register');
       } else {
         passport.authenticate('local')(req, res, () => {
@@ -103,6 +111,7 @@ app
   });
 
 app.get('/secrets', (req, res) => {
+  console.log('!!req --->', req.isAuthenticated);
   if (req.isAuthenticated()) {
     res.render('secrets');
   } else {
