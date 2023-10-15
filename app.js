@@ -1,15 +1,29 @@
 //jshint esversion:6
 
 import mongoose from 'mongoose';
-import encrypt from 'mongoose-encryption';
 import express from 'express';
 const app = express();
 import 'dotenv/config';
 import ejs from 'ejs';
+import session from 'express-session';
+import passport from 'passport';
+import passportLocalMongoose from 'passport-local-mongoose';
+//
 const port = process.env.PORT || 3000;
+// customise middleware
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use(
+  session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
+//
 
 // Database configuration
 const Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
@@ -19,7 +33,7 @@ const user1DB = mongoose.createConnection(dbUri, Urioptions);
 
 // Define the user schema
 const userSchema = new mongoose.Schema({
-  email: {
+  username: {
     type: String,
     required: true,
   },
@@ -28,9 +42,16 @@ const userSchema = new mongoose.Schema({
     required: true,
   },
 });
-
+//
+//Define the Schema plugin
+userSchema.plugin(passportLocalMongoose);
+//
+// Define the user model
 const User = user1DB.model('User', userSchema);
-
+//
+passport.use(User.createStrategy());
+passport.serializeUser(User.serializeUser());
+passport.deserializeUser(User.deserializeUser());
 //
 app.get('/', (req, res) => {
   res.render('home');
@@ -43,7 +64,7 @@ app
   .post(async (req, res) => {
     let { email, password } = req.body;
     try {
-      const userFound = await User.findOne({ email: email });
+      const userFound = await User.findOne({ username: email });
       if (!userFound) {
         return res.render('status', { status: "User doesn't exist" }); // Corrected the status message
       }
@@ -69,27 +90,25 @@ app
   })
   .post(async (req, res) => {
     let { email, password } = req.body;
-
-    // Create a new user document
-    const newUser = new User({
-      email,
-      password,
+    User.register({ username: email }, password, function (err, user) {
+      if (err) {
+        console.log('!!err --->', err);
+        res.redirect('/register');
+      } else {
+        passport.authenticate('local')(req, res, () => {
+          res.redirect('/secrets');
+        });
+      }
     });
-    console.log('!!newUser --->', newUser);
-
-    // Save the user to the database
-    try {
-      await newUser.save();
-      console.log('Success');
-      res.render('secrets.ejs');
-    } catch (error) {
-      console.log('!!error while saving registration detail ---', error);
-    }
   });
 
-// Route to handle user registration
-app.post('/register', (req, res) => {});
-//
-app.listen(port, console.log(`Port started at ${port}`));
+app.get('/secrets', (req, res) => {
+  if (req.isAuthenticated()) {
+    res.render('secrets');
+  } else {
+    res.redirect('/login');
+  }
+});
 
 //
+app.listen(port, console.log(`Port started at ${port}`));
