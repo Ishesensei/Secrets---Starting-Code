@@ -19,7 +19,7 @@ const user1DB = mongoose.createConnection(dbUri, Urioptions);
 
 // Define the user schema
 const userSchema = new mongoose.Schema({
-  email: {
+  username: {
     type: String,
     required: true,
   },
@@ -44,7 +44,7 @@ app
   .post(async (req, res) => {
     const { email, password } = req.body;
     try {
-      const userFound = await User.findOne({ email: email });
+      const userFound = await User.findOne({ username: email });
       if (userFound && userFound.password === password) {
         console.log('!!status --->', ` logged in successfully for`, email);
 
@@ -67,10 +67,10 @@ app
   })
   .post(async (req, res) => {
     const { email, password } = req.body;
-
+    const username = email;
     // Create a new user document
     const newUser = new User({
-      email,
+      username,
       password,
     });
     console.log('!!newUser --->', newUser);
