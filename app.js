@@ -141,5 +141,11 @@ app.get('/secrets', (req, res) => {
   }
 });
 
+app.get("/logout", function(req, res, next) {
+  req.logout(function(err) {
+    if (err) { return next(err); }
+    res.redirect('/');
+  });
+});
 //
 app.listen(port, console.log(`Port started at ${port}`));
