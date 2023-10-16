@@ -1,6 +1,5 @@
 import chalk from 'chalk';
-//
-export { colorTags };
+export { colorTags, chalk };
 const colorTags = {
   httpReq: () => {
     console.log(

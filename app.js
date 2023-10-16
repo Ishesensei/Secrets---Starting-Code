@@ -11,10 +11,8 @@ import passportLocalMongoose from 'passport-local-mongoose';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
-import chalk from 'chalk';
 import morgan from './customMorgan.js';
-import { colorTags } from './customcolorTags.js';
-
+import { colorTags, chalk } from './customcolorTags.js';
 
 //
 const port = process.env.PORT || 3000;
@@ -114,22 +112,30 @@ app
     colorTags.httpReq();
     let { email, password } = req.body;
     const username = email;
-    User.register({ username: username }, password, async function (err, user) {
-      if (err) {
-        console.log( err.message);
-        res.send(err.message)
-        //res.redirect('/register');
-      } else {
-        console.log(`user--created`);
-        res.redirect('/secrets')
-        colorTags.log(`user--created`);
+    await User.register(
+      { username: username },
+      password,
+      async function (err, user) {
+        if (err) {
+          console.log(err.message);
+          res.send(err.message);
+          //res.redirect('/register');
+        } else {
+          colorTags.log('User Registered');
+          await passport.authenticate('local', {
+            successRedirect: '/secrets',
+            failureRedirect: '/register',
+            failureFlash: true,
+          });
+        }
       }
-    });
+    );
   });
 
 app.get('/secrets', (req, res) => {
   colorTags.httpReq();
- 
+  res.render('secrets');
+
   if (req.isAuthenticated()) {
     res.render('secrets');
   } else {
