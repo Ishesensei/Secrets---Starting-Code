@@ -116,20 +116,17 @@ app
       }
       if (user) {
         colorTags.log('User Registered');
-        async function authenticateUser(req, res) {
-  return new Promise((resolve, reject) => {
-    passport.authenticate('local', {
-      successRedirect: '/secrets',
-      failureRedirect: '/login',
-    })(req, res, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
+        passport.authenticate('local', {
+          successRedirect: '/secrets',
+          failureRedirect: '/login',
+        })(req, res, (err) => {
+          if (err) {
+            // Handle the error here
+            console.error(err);
+            // You can also redirect to an error page or send a custom response
+            res.status(500).send('Internal Server Error');
+          }
+        });
       }
     });
   });
