@@ -8,20 +8,21 @@ import ejs from 'ejs';
 import session from 'express-session';
 import passport from 'passport';
 import passportLocalMongoose from 'passport-local-mongoose';
-import morgan from 'morgan';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __dirname = dirname(fileURLToPath(import.meta.url));
+import chalk from 'chalk';
+import morgan from './customMorgan.js';
+import { colorTags } from './customcolorTags.js';
+
+
 //
 const port = process.env.PORT || 3000;
 // customise middleware
-morgan.token('req-query', (req) => `:query> ${JSON.stringify(req.query)}`);
-morgan.token('req-params', (req) => `:params> ${JSON.stringify(req.params)}`);
-morgan.token('req-body', (req) => `:body> ${JSON.stringify(req.body)}`);
-morgan.token('req-headers-cookie', (req) => `:headers.cookie> ${JSON.stringify(req.headers.cookie)}`);
-morgan.token('line', () => '``````````````````````````````````````');
-app.use(morgan(':method :url :status :res[content-length] :response-time ms\n:req-query :req-params :req-body\n :req-headers-cookie\n :line'));
-
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.set('trust proxy', 1);
 app.use(
   session({
     secret: process.env.SECRET,
@@ -32,7 +33,20 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 //
-
+app.use(
+  morgan(
+    `${chalk.overline.underline.magenta(
+      '( :method )'
+    )} ${chalk.overline.underline.green(
+      '( :url )'
+    )} :status :res[content-length]\n:req-query :req-params :req-body\n :req-headers-cookie\n :line`
+  )
+);
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send('Internal Server Error');
+});
+//
 // Database configuration
 const Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
 const dbUri = 'mongodb://localhost:27017/user1DB';
@@ -44,9 +58,6 @@ const userSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-  },
-  password: {
-    type: String,
   },
 });
 //
@@ -61,14 +72,18 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 //
 app.get('/', (req, res) => {
+  colorTags.httpReq();
   res.render('home');
 });
 app
   .route('/login')
   .get((req, res) => {
+    colorTags.httpReq();
+
     res.render('login');
   })
   .post(async (req, res) => {
+    colorTags.httpReq();
     let { email, password } = req.body;
     try {
       const userFound = await User.findOne({ username: email });
@@ -89,29 +104,32 @@ app
       res.render('status', { status: 'Some error while looking for the user' });
     }
   });
-
 app
   .route('/register')
   .get((req, res) => {
+    colorTags.httpReq();
     res.render('register');
   })
   .post(async (req, res) => {
+    colorTags.httpReq();
     let { email, password } = req.body;
     const username = email;
-    User.register({ username: username }, password, function (err, user) {
+    User.register({ username: username }, password, async function (err, user) {
       if (err) {
-        console.log('!!err during register .post--->', err);
-        res.redirect('/register');
+        console.log( err.message);
+        res.send(err.message)
+        //res.redirect('/register');
       } else {
-        passport.authenticate('local')(req, res, () => {
-          res.redirect('/secrets');
-        });
+        console.log(`user--created`);
+        res.redirect('/secrets')
+        colorTags.log(`user--created`);
       }
     });
   });
 
 app.get('/secrets', (req, res) => {
-  console.log('!!req --->', req.isAuthenticated);
+  colorTags.httpReq();
+ 
   if (req.isAuthenticated()) {
     res.render('secrets');
   } else {
