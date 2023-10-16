@@ -13,24 +13,13 @@ import { dirname } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 import morgan from './customMorgan.js';
 import { colorTags, chalk } from './customcolorTags.js';
-
+import cookieParser from 'cookie-parser';
 //
 const port = process.env.PORT || 3000;
 // customise middleware
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
-app.set('trust proxy', 1);
-app.use(
-  session({
-    secret: process.env.SECRET,
-    resave: false,
-    saveUninitialized: false,
-  })
-);
-app.use(passport.initialize());
-app.use(passport.session());
-//
 app.use(
   morgan(
     `${chalk.overline.underline.magenta(
@@ -40,6 +29,18 @@ app.use(
     )} :status :res[content-length]\n:req-query :req-params :req-body\n :req-headers-cookie\n :line`
   )
 );
+app.use(
+  session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(cookieParser());
+//
+app.use(passport.initialize());
+app.use(passport.session());
+//
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send('Internal Server Error');
@@ -53,10 +54,8 @@ const user1DB = mongoose.createConnection(dbUri, Urioptions);
 
 // Define the user schema
 const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-  },
+  username: String,
+  password: String,
 });
 //
 //Define the Schema plugin
@@ -84,22 +83,19 @@ app
     colorTags.httpReq();
     let { email, password } = req.body;
     try {
-      const userFound = await User.findOne({ username: email });
-      if (!userFound) {
-        return res.render('status', { status: "User doesn't exist" }); // Corrected the status message
-      }
-
-      // Check if the password provided matches the user's password
-      const passwordMatch = userFound.password === password;
-
-      if (passwordMatch) {
-        console.log(`Authentication matched!`);
-        res.render('secrets');
-      } else {
-        res.render('status', { status: 'Login failed. Password error.' });
-      }
+      passport.authenticate('local', {
+        successRedirect: '/secrets',
+        failureRedirect: '/login',
+      })(req, res, (err) => {
+        if (err) {
+          // Handle the error here
+          console.error(err);
+          // You can also redirect to an error page or send a custom response
+          res.status(500).send('Internal Server Error');
+        }
+      });
     } catch (error) {
-      res.render('status', { status: 'Some error while looking for the user' });
+      res.render('status', { status: 'Some error ' });
     }
   });
 app
@@ -112,29 +108,34 @@ app
     colorTags.httpReq();
     let { email, password } = req.body;
     const username = email;
-    await User.register(
-      { username: username },
-      password,
-      async function (err, user) {
-        if (err) {
-          console.log(err.message);
-          res.send(err.message);
-          //res.redirect('/register');
-        } else {
-          colorTags.log('User Registered');
-          await passport.authenticate('local', {
-            successRedirect: '/secrets',
-            failureRedirect: '/register',
-            failureFlash: true,
-          });
-        }
+    await User.register({ username: username }, password, function (err, user) {
+      if (err) {
+        console.log(err.message);
+        return res.send(err.message);
+        //res.redirect('/register');
       }
-    );
+      if (user) {
+        colorTags.log('User Registered');
+        async function authenticateUser(req, res) {
+  return new Promise((resolve, reject) => {
+    passport.authenticate('local', {
+      successRedirect: '/secrets',
+      failureRedirect: '/login',
+    })(req, res, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+      }
+    });
   });
 
 app.get('/secrets', (req, res) => {
   colorTags.httpReq();
-  res.render('secrets');
 
   if (req.isAuthenticated()) {
     res.render('secrets');

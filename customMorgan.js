@@ -6,13 +6,13 @@ morgan.token('req-params', (req) => `:params> ${JSON.stringify(req.params)}`);
 morgan.token('req-body', (req) => `:body> ${JSON.stringify(req.body)}`);
 morgan.token('req-headers-cookie', (req) => {
   if (req.headers.cookie) {
-    `:headers.cookie> ${
+    return `:headers.cookie> ${
       JSON.stringify(
         req.headers.cookie.length + ` ${req.headers.cookie}`
       ).substring(0, 17) + `...`
     }`;
   } else {
-    `:headers.cookie> no such header!
+    return `:headers.cookie> --
       `;
   }
 });
