@@ -45,6 +45,15 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send('Internal Server Error');
 });
+function isAuth(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  if (!req.isAuthenticated()) {
+    colorTags.log('user not authenticated!');
+    return res.redirect('/login');
+  }
+}
 //
 // Database configuration
 const Urioptions = { useUnifiedTopology: true, useNewUrlParser: true };
@@ -86,6 +95,7 @@ app
       passport.authenticate('local', {
         successRedirect: '/secrets',
         failureRedirect: '/login',
+        failureFlash: 'failed to authenticate so redirecting to login!',
       })(req, res, (err) => {
         if (err) {
           // Handle the error here
@@ -116,22 +126,18 @@ app
       }
       if (user) {
         colorTags.log('User Registered');
-        passport.authenticate('local', {
-          successRedirect: '/secrets',
-          failureRedirect: '/login',
-        })(req, res, (err) => {
+        req.logIn(user, function (err) {
           if (err) {
-            // Handle the error here
-            console.error(err);
-            // You can also redirect to an error page or send a custom response
-            res.status(500).send('Internal Server Error');
+            throw err;
           }
+          // session saved
+          return res.redirect('/secrets');
         });
       }
     });
   });
 
-app.get('/secrets', (req, res) => {
+app.get('/secrets', isAuth, (req, res) => {
   colorTags.httpReq();
 
   if (req.isAuthenticated()) {
@@ -141,9 +147,11 @@ app.get('/secrets', (req, res) => {
   }
 });
 
-app.get("/logout", function(req, res, next) {
-  req.logout(function(err) {
-    if (err) { return next(err); }
+app.get('/logout', isAuth, function (req, res, next) {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
     res.redirect('/');
   });
 });
