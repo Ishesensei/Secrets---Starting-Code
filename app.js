@@ -133,7 +133,7 @@ app
   });
 
 app.get(
-  '/oauth2/redirect',
+  '/oauth2/google',
   passport.authenticate('google', { scope: ['profile'] })
 );
 
