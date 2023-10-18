@@ -1,6 +1,7 @@
 //jshint esversion:6
 
 import mongoose from 'mongoose';
+import bodyParser from 'body-parser';
 import express from 'express';
 const app = express();
 import 'dotenv/config';
@@ -22,7 +23,7 @@ import findOrCreate from 'mongoose-findorcreate';
 //
 const port = process.env.PORT || 3000;
 // customise middleware
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use(flash());
