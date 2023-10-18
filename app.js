@@ -95,6 +95,7 @@ passport.use(
       callbackURL: 'http://localhost:3000/oauth2/redirect/google',
       userProfileURL: 'http://www.googleapis.com/oauth2/v3/userinfo',
       scope: ['email', 'profile'],
+      passReqToCallback   : true
     },
     function (request, accessToken, refreshToken, profile, done) {
       console.log(request, accessToken, refreshToken, profile);
