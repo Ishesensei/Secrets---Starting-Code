@@ -14,6 +14,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 import morgan from './customMorgan.js';
 import { colorTags, chalk } from './customcolorTags.js';
 import cookieParser from 'cookie-parser';
+import GoogleStrategy from 'passport-google-oauth20';
+GoogleStrategy.Strategy;
 //
 const port = process.env.PORT || 3000;
 // customise middleware
