@@ -91,9 +91,9 @@ passport.use(
       callbackURL: 'http://localhost:3000/oauth2/redirect/google',
       passReqToCallback: true,
     },
-    function (request, accessToken, refreshToken, profile, done) {
+    function (accessToken, refreshToken, profile, cb) {
       User.findOrCreate({ googleId: profile.id }, function (err, user) {
-        return done(err, user);
+        return cb(err, user);
       });
     }
   )
@@ -131,6 +131,22 @@ app
       res.render('status', { status: 'Some error ' });
     }
   });
+
+app.get(
+  '/oauth2/redirect',
+  passport.authenticate('google', { scope: ['profile'] })
+);
+
+app.get(
+  '/oauth2/redirect/google',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  function (req, res) {
+    // Successful authentication, redirect home.
+    console.log('user logged in !');
+    res.redirect('/secrets');
+  }
+);
+
 app
   .route('/register')
   .get((req, res) => {
@@ -159,9 +175,6 @@ app
       }
     });
   });
-app.get('/oauth2/redirect/google', (req, res) => {
-  passport.authenticate('google', { scope: ['profile'] });
-});
 
 app.get('/secrets', isAuth, (req, res) => {
   colorTags.httpReq();
