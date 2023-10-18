@@ -71,11 +71,11 @@ const user1DB = mongoose.createConnection(dbUri, Urioptions);
 // Define the user schema
 const userSchema = new mongoose.Schema({
   username: String,
-  password: String,
 });
 //
 //Define the Schema plugin
 userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 //
 // Define the user model
 const User = user1DB.model('User', userSchema);
@@ -93,6 +93,7 @@ passport.use(
       passReqToCallback: true,
     },
     function (accessToken, refreshToken, profile, cb) {
+      colorTags.log(accessToken, refreshToken, profile);
       User.findOrCreate({ googleId: profile.id }, function (err, user) {
         return cb(err, user);
       });
@@ -140,7 +141,10 @@ app.get(
 
 app.get(
   '/oauth2/redirect/google',
-  passport.authenticate('google', { failureRedirect: '/login' }),
+  passport.authenticate('google', {
+    failureRedirect: '/login',
+    failureMessage: true,
+  }),
   function (req, res) {
     // Successful authentication, redirect home.
     console.log('user logged in !');
