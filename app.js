@@ -5,6 +5,7 @@ import express from 'express';
 const app = express();
 import 'dotenv/config';
 import ejs from 'ejs';
+import flash from 'connect-flash';
 import session from 'express-session';
 import passport from 'passport';
 import passportLocalMongoose from 'passport-local-mongoose';
@@ -16,12 +17,15 @@ import { colorTags, chalk } from './customcolorTags.js';
 import cookieParser from 'cookie-parser';
 import GoogleStrategy from 'passport-google-oauth20';
 GoogleStrategy.Strategy;
+import findOrCreate from 'mongoose-findorcreate';
+
 //
 const port = process.env.PORT || 3000;
 // customise middleware
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
+app.use(flash());
 app.use(
   morgan(
     `${chalk.overline.underline.magenta(
@@ -78,6 +82,23 @@ const User = user1DB.model('User', userSchema);
 passport.use(User.createStrategy());
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
+//
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      callbackURL: 'http://localhost:3000/oauth2/redirect/google',
+      passReqToCallback: true,
+    },
+    function (request, accessToken, refreshToken, profile, done) {
+      User.findOrCreate({ googleId: profile.id }, function (err, user) {
+        return done(err, user);
+      });
+    }
+  )
+);
+
 //
 app.get('/', (req, res) => {
   colorTags.httpReq();
@@ -138,6 +159,9 @@ app
       }
     });
   });
+app.get('/oauth2/redirect/google', (req, res) => {
+  passport.authenticate('google', { scope: ['profile'] });
+});
 
 app.get('/secrets', isAuth, (req, res) => {
   colorTags.httpReq();
