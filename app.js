@@ -70,7 +70,10 @@ const user1DB = mongoose.createConnection(dbUri, Urioptions);
 
 // Define the user schema
 const userSchema = new mongoose.Schema({
-  username: String,
+  email: String,
+  password: String,
+  googleId: String,
+  secret: String
 });
 //
 //Define the Schema plugin
@@ -90,12 +93,13 @@ passport.use(
       clientID: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
       callbackURL: 'http://localhost:3000/oauth2/redirect/google',
-      passReqToCallback: true,
+      userProfileURL: 'http://www.googleapis.com/oauth2/v3/userinfo',
+      scope: ['email', 'profile'],
     },
-    function (accessToken, refreshToken, profile, cb) {
-      colorTags.log(accessToken, refreshToken, profile);
+    function (request, accessToken, refreshToken, profile, done) {
+      console.log(request, accessToken, refreshToken, profile);
       User.findOrCreate({ googleId: profile.id }, function (err, user) {
-        return cb(err, user);
+        return done(err, user);
       });
     }
   )
